@@ -19,22 +19,22 @@ export default async function handler(req, res) {
     const systemPrompt =
       'Você é uma IA especialista na história do futebol feminino. Responda de forma amigável e informativa.';
 
-    // Payload corrigido com 'role' e 'content'
+    // Payload corrigido com 'contents' e 'role'
     const payload = {
-      messages: [
+      contents: [
         {
           role: 'system',
-          content: [{ type: 'text', text: systemPrompt }],
+          parts: [{ text: systemPrompt }],
         },
         {
           role: 'user',
-          content: [{ type: 'text', text: message }],
+          parts: [{ text: message }],
         },
       ],
     };
 
     const url =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateMessage';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     const r = await fetch(url, {
       method: 'POST',
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     const data = await r.json();
 
     // Extrai a resposta do bot
-    const botText = data?.candidates?.[0]?.content?.[0]?.text ?? null;
+    const botText = data?.contents?.[1]?.parts?.[0]?.text ?? null;
     if (!botText) {
       return res.status(500).json({ error: 'Invalid response from Gemini' });
     }
