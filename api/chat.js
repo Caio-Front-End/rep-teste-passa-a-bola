@@ -16,25 +16,31 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
     }
 
-    // Prompt do sistema (ajusta como quiser)
     const systemPrompt =
       'Você é uma IA especialista na história do futebol feminino. Responda de forma amigável e informativa.';
 
+    // Payload corrigido com 'role' e 'content'
     const payload = {
-      contents: [
-        { parts: [{ text: systemPrompt }] },
-        { parts: [{ text: message }] },
+      messages: [
+        {
+          role: 'system',
+          content: [{ type: 'text', text: systemPrompt }],
+        },
+        {
+          role: 'user',
+          content: [{ type: 'text', text: message }],
+        },
       ],
     };
 
     const url =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateMessage';
 
     const r = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey, // usar header conforme docs
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify(payload),
     });
@@ -45,8 +51,9 @@ export default async function handler(req, res) {
     }
 
     const data = await r.json();
-    const botText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
 
+    // Extrai a resposta do bot
+    const botText = data?.candidates?.[0]?.content?.[0]?.text ?? null;
     if (!botText) {
       return res.status(500).json({ error: 'Invalid response from Gemini' });
     }

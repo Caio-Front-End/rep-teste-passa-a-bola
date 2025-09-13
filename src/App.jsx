@@ -25,13 +25,14 @@ const Chatbot = () => {
   const [messages, setMessages] = useState([
     {
       from: 'bot',
-      text: 'Olá! Sou a IA do Passa a Bola. Como posso te ajudar hoje?',
+      text: 'Olá! Sou a IA de história do Futebol Feminino. Como posso te ajudar hoje?',
     },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
 
+  // Rola sempre para a última mensagem
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -46,7 +47,7 @@ const Chatbot = () => {
     setInput('');
     setIsLoading(true);
 
-    // mostra "digitando..."
+    // Adiciona mensagem "digitando..."
     const typingMessage = { from: 'bot', text: '...' };
     setMessages((prev) => [...prev, typingMessage]);
 
@@ -63,7 +64,7 @@ const Chatbot = () => {
       }
 
       const data = await resp.json();
-      const botText = data.text ?? 'Desculpe, resposta vazia.';
+      const botText = data.text ?? 'Desculpe, não consegui gerar uma resposta.';
 
       const botMessage = { from: 'bot', text: botText };
       setMessages((prev) => [...prev.slice(0, -1), botMessage]); // substitui '...'
@@ -81,6 +82,7 @@ const Chatbot = () => {
 
   return (
     <div className="fixed bottom-17 right-5 z-50 flex flex-col items-end gap-4 md:bottom-10 md:right-8">
+      {/* Janela do Chat */}
       <div
         className={`bg-white dark:bg-gray-800 w-80 md:w-96 h-[28rem] md:h-[32rem] shadow-2xl rounded-lg flex flex-col transition-all duration-300 ease-in-out ${
           isOpen
@@ -89,6 +91,7 @@ const Chatbot = () => {
         }`}
         style={{ transformOrigin: 'bottom right' }}
       >
+        {/* Header */}
         <div className="bg-[#b554b5] text-white p-3 rounded-t-lg flex justify-between items-center shadow-md">
           <h3 className="font-bold text-lg">Chat Histórico</h3>
           <button
@@ -100,6 +103,7 @@ const Chatbot = () => {
           </button>
         </div>
 
+        {/* Corpo das Mensagens */}
         <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           {messages.map((msg, idx) => (
             <div
@@ -122,6 +126,7 @@ const Chatbot = () => {
           <div ref={chatEndRef} />
         </div>
 
+        {/* Input */}
         <form
           onSubmit={handleSendMessage}
           className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
@@ -147,6 +152,7 @@ const Chatbot = () => {
         </form>
       </div>
 
+      {/* Botão Flutuante */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="cursor-pointer bg-[#b554b5] text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-[#d44b84] transition-transform duration-300 hover:scale-110"
