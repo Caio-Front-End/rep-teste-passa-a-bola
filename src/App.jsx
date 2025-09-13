@@ -7,6 +7,7 @@ import {
   Heart,
   MessageCircle,
   Send,
+  X,
   User,
   Calendar,
   BarChart2,
@@ -19,73 +20,67 @@ import {
 } from 'lucide-react';
 
 // Componente do Chatbot
-
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       from: 'bot',
-      text: 'Olá! Sou a IA de história do Futebol Feminino. Como posso te ajudar hoje?',
+      text: 'Olá! Sou a IA do Passa a Bola. Como posso te ajudar hoje?',
     },
   ]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Efeito para rolar para a última mensagem
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (input.trim() === '') return;
+    e?.preventDefault();
+    if (!input.trim() || isLoading) return;
 
     const userMessage = { from: 'user', text: input };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
+    setIsLoading(true);
 
-    // Adiciona um feedback de "digitando..."
-    setTimeout(() => {
-      const typingMessage = { from: 'bot', text: '...' };
-      setMessages((prevMessages) => [...prevMessages, typingMessage]);
-    }, 500);
+    // mostra "digitando..."
+    const typingMessage = { from: 'bot', text: '...' };
+    setMessages((prev) => [...prev, typingMessage]);
 
-    // TODO: Conectar com a sua API serverless aqui!
-    // A lógica abaixo é um exemplo de como você faria a chamada.
-    /*
     try {
-      const response = await fetch('/api/chat', {
+      const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: input }),
+        body: JSON.stringify({ message: currentInput }),
       });
-      const data = await response.json();
-      
-      const botMessage = { from: 'bot', text: data.answer };
-      // Substitui a mensagem de "digitando..." pela resposta real
-      setMessages(prevMessages => [...prevMessages.slice(0, -1), botMessage]);
 
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => null);
+        throw new Error(err?.error || resp.statusText || 'API error');
+      }
+
+      const data = await resp.json();
+      const botText = data.text ?? 'Desculpe, resposta vazia.';
+
+      const botMessage = { from: 'bot', text: botText };
+      setMessages((prev) => [...prev.slice(0, -1), botMessage]); // substitui '...'
     } catch (error) {
-      console.error("Erro ao contatar a API:", error);
-      const errorMessage = { from: 'bot', text: 'Desculpe, estou com problemas para me conectar. Tente novamente mais tarde.' };
-      setMessages(prevMessages => [...prevMessages.slice(0, -1), errorMessage]);
-    }
-    */
-
-    // Resposta de exemplo (remover ao conectar a API)
-    setTimeout(() => {
-      const botMessage = {
+      console.error('Erro ao contatar /api/chat:', error);
+      const errorMessage = {
         from: 'bot',
-        text: `Recebi sua pergunta: "${userMessage.text}". Em breve, responderei com dados reais!`,
+        text: 'Desculpe, não consegui responder agora. Tente novamente mais tarde.',
       };
-      // Substitui a mensagem de "digitando..." pela resposta de exemplo
-      setMessages((prevMessages) => [...prevMessages.slice(0, -1), botMessage]);
-    }, 1500);
+      setMessages((prev) => [...prev.slice(0, -1), errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="fixed bottom-17 right-5 z-50 flex flex-col items-end gap-4 md:bottom-10 md:right-8">
-      {/* Janela do Chat */}
       <div
         className={`bg-white dark:bg-gray-800 w-80 md:w-96 h-[28rem] md:h-[32rem] shadow-2xl rounded-lg flex flex-col transition-all duration-300 ease-in-out ${
           isOpen
@@ -94,46 +89,31 @@ const Chatbot = () => {
         }`}
         style={{ transformOrigin: 'bottom right' }}
       >
-        {/* Header */}
         <div className="bg-[#b554b5] text-white p-3 rounded-t-lg flex justify-between items-center shadow-md">
           <h3 className="font-bold text-lg">Chat Histórico</h3>
           <button
             onClick={() => setIsOpen(false)}
             className="text-white hover:text-pink-200"
+            aria-label="Fechar chat"
           >
-            {/* Ícone de Fechar (X) */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X size={24} />
           </button>
         </div>
 
-        {/* Corpo das Mensagens */}
         <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          {messages.map((msg, index) => (
+          {messages.map((msg, idx) => (
             <div
-              key={index}
+              key={idx}
               className={`my-2 flex ${
                 msg.from === 'bot' ? 'justify-start' : 'justify-end'
               }`}
             >
               <span
-                className={`inline-block p-2 px-3 rounded-lg max-w-xs break-words ${
+                className={`inline-block p-2 px-3 rounded-lg max-w-xs break-words shadow ${
                   msg.from === 'bot'
                     ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                     : 'bg-[#b554b5] text-white'
-                }`}
+                } ${msg.text === '...' ? 'animate-pulse' : ''}`}
               >
                 {msg.text}
               </span>
@@ -142,7 +122,6 @@ const Chatbot = () => {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Input de Mensagem */}
         <form
           onSubmit={handleSendMessage}
           className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
@@ -153,11 +132,14 @@ const Chatbot = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#b554b5] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Digite sua pergunta..."
+              placeholder={isLoading ? 'Aguarde...' : 'Digite sua pergunta...'}
+              disabled={isLoading}
             />
             <button
               type="submit"
-              className="bg-[#b554b5] text-white p-3 rounded-r-md hover:bg-[#d44b84] transition-colors"
+              className="bg-[#b554b5] text-white p-3 rounded-r-md hover:bg-[#d44b84] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={isLoading}
+              aria-label="Enviar mensagem"
             >
               <Send size={20} />
             </button>
@@ -165,11 +147,14 @@ const Chatbot = () => {
         </form>
       </div>
 
-      {/* Botão Flutuante */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer bg-[#b554b5] text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-[#d44b84] transition-all duration-300"
-        style={{ transform: isOpen ? 'scale(0)' : 'scale(1)' }}
+        className="cursor-pointer bg-[#b554b5] text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-[#d44b84] transition-transform duration-300 hover:scale-110"
+        style={{
+          transform: isOpen ? 'scale(0)' : 'scale(1)',
+          transformOrigin: 'bottom right',
+        }}
+        aria-label="Abrir chat"
       >
         <MessageCircle size={32} />
       </button>
